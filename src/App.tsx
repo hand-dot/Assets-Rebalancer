@@ -1,10 +1,16 @@
-import * as React from 'react';
-import { useState, useEffect } from 'react';
+import * as React from "react";
+import { useState, useEffect } from "react";
 
 interface Asset {
   stock: number;
   commodity: number;
   bond: number;
+}
+
+interface Breakdown {
+  category: "stock" | "commodity" | "bond";
+  ticker: string;
+  amount: number;
 }
 
 function rebalance(currentAsset: Asset): { ideal: Asset; operation: Asset } {
@@ -26,11 +32,10 @@ function rebalance(currentAsset: Asset): { ideal: Asset; operation: Asset } {
 
 const RebalanceComponent: React.FC = () => {
   const [result, setResult] = useState<{ ideal: Asset; operation: Asset }>();
-  const [breakdown, setBreakdown] = useState([]);
-
+  const [breakdown, setBreakdown] = useState<Breakdown[]>([]);
   // Load stored data from local storage
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem('assetData') || '[]');
+    const storedData = JSON.parse(localStorage.getItem("assetData") || "[]");
     if (storedData.length > 0) {
       setBreakdown(storedData);
     }
@@ -41,55 +46,55 @@ const RebalanceComponent: React.FC = () => {
     const currentAsset: Asset = { stock: 0, commodity: 0, bond: 0 };
 
     breakdown.forEach((item) => {
-      if (item.category === 'stock') {
+      if (item.category === "stock") {
         currentAsset.stock += item.amount;
-      } else if (item.category === 'commodity') {
+      } else if (item.category === "commodity") {
         currentAsset.commodity += item.amount;
-      } else if (item.category === 'bond') {
+      } else if (item.category === "bond") {
         currentAsset.bond += item.amount;
       }
     });
 
     setResult(rebalance(currentAsset));
-    localStorage.setItem('assetData', JSON.stringify(breakdown));
-    console.log('breakdown', breakdown);
+    localStorage.setItem("assetData", JSON.stringify(breakdown));
+    console.log("breakdown", breakdown);
   }, [breakdown]);
 
   // Format number with commas
-  const formatNumber = (num) =>
-    num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const formatNumber = (num: number) =>
+    num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   // Add a new item to the breakdown
   const handleAddBreakdown = () => {
-    setBreakdown([...breakdown, { category: 'stock', ticker: '', amount: 0 }]);
+    setBreakdown([...breakdown, { category: "stock", ticker: "", amount: 0 }]);
   };
 
   // Update a specific breakdown item
-  const handleUpdateBreakdown = (index, updatedItem) => {
+  const handleUpdateBreakdown = (index: number, updatedItem: Breakdown) => {
     setBreakdown(
       breakdown.map((item, i) => (i === index ? updatedItem : item))
     );
   };
 
   // Remove a specific breakdown item
-  const handleRemoveBreakdown = (index) => {
+  const handleRemoveBreakdown = (index: number) => {
     setBreakdown(breakdown.filter((_, i) => i !== index));
   };
 
   const currentAsset: Asset = { stock: 0, commodity: 0, bond: 0 };
 
   breakdown.forEach((item) => {
-    if (item.category === 'stock') {
+    if (item.category === "stock") {
       currentAsset.stock += item.amount;
-    } else if (item.category === 'commodity') {
+    } else if (item.category === "commodity") {
       currentAsset.commodity += item.amount;
-    } else if (item.category === 'bond') {
+    } else if (item.category === "bond") {
       currentAsset.bond += item.amount;
     }
   });
 
   return (
-    <div>
+    <div style={{ maxWidth: 500, margin: "0 auto" }}>
       <h1>資産リバランス</h1>
       {result && (
         <div>
@@ -102,7 +107,7 @@ const RebalanceComponent: React.FC = () => {
 
           <h2>操作</h2>
           <p>
-            株式・社債・不動産: {formatNumber(result.operation.stock / 10000)}{' '}
+            株式・社債・不動産: {formatNumber(result.operation.stock / 10000)}{" "}
             万
           </p>
           <p>
@@ -113,8 +118,11 @@ const RebalanceComponent: React.FC = () => {
       )}
       <h2>内訳</h2>
       <p>
-        合計: {Object.values(currentAsset).reduce((a, b) => a + b, 0)} (
-        {JSON.stringify(currentAsset)})
+        合計:{" "}
+        {formatNumber(
+          Object.values(currentAsset).reduce((a, b) => a + b, 0) / 10000
+        )}{" "}
+        万 ({JSON.stringify(currentAsset)})
       </p>
       <button onClick={handleAddBreakdown}>内訳追加</button>
       <table>
@@ -135,7 +143,10 @@ const RebalanceComponent: React.FC = () => {
                   onChange={(e) =>
                     handleUpdateBreakdown(index, {
                       ...item,
-                      category: e.target.value,
+                      category: e.target.value as
+                        | "stock"
+                        | "commodity"
+                        | "bond",
                     })
                   }
                 >
